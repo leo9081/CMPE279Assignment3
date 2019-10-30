@@ -5,9 +5,14 @@
 #include <stdlib.h> 
 #include <netinet/in.h> 
 #include <string.h> 
-#define PORT 8080 
+#define PORT 8080
+
+ 
 int main(int argc, char const *argv[]) 
 { 
+
+if(argc < 2){
+printf("int the parent %d\n", argc);
     int server_fd, new_socket, valread; 
     struct sockaddr_in address; 
     int opt = 1; 
@@ -57,7 +62,7 @@ int main(int argc, char const *argv[])
     if(childPid==0){
 	char str[12];
 	sprintf(str, "%d", new_socket);
-	execl("dataprocessor", "dataprocessor", str, NULL);
+	execl("server", "server", str, NULL);
 	/*valread = read( new_socket , buffer, 1024); 
     	printf("%s\n",buffer ); 
     	send(new_socket , hello , strlen(hello) , 0 ); 
@@ -68,6 +73,21 @@ int main(int argc, char const *argv[])
     	waitpid(childPid,&returnStatus,0);
 	printf("Child process return status: %d\n",returnStatus);
     }
+    }else{
+	printf("int the child %d\n", argc);
 
+ 	pid_t childPid2;
+    	childPid2 = fork();
+    	if(childPid2==0){
+		char str[12];
+		int new_socket = atoi(argv[1]);
+		sprintf(str, "%d", new_socket);
+		execl("dpchild", "dpchild", str, NULL);
+    	}else{
+		int returnStatus;
+    		waitpid(childPid2,&returnStatus,0);
+		printf("Child process return status: %d\n",returnStatus);
+    	}
+    }
     return 0; 
 } 
