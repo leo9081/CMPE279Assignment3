@@ -13,24 +13,25 @@ int droproot;
 int root_dropped;
 char *user = "nobody";		/* User to switch to */
 char *group = "nogroup";		/* group to switch to */
-const char *chrootdir = "/home/osboxes/Documents/GitRepo/CMPE279Assignment2/jail" ;	/* directory to chroot to */
+const char *chrootdir = "/home/osboxes/Documents/GitRepo/CMPE279Assignment3/jail" ;	/* directory to chroot to */
 uid_t sw_uid;
 gid_t sw_gid;
 char *endp;
 struct group *gr;
 struct passwd *pw;
 int errno;
-
+#define LENGTH 512
 
 int main(int argc, char const *argv[]) { 
 
+	char cwd[1000];
+	getcwd(cwd, sizeof(cwd));
+	printf("Initial user: %d\n", getuid() );
+	printf("Initial group: %d\n", getgid() );
+	printf("Initial working dir: %s\n", cwd );
 
-char cwd[1000];
-getcwd(cwd, sizeof(cwd));
-printf("Initial user: %d\n", getuid() );
-printf("Initial group: %d\n", getgid() );
-printf("Initial working dir: %s\n", cwd );
-
+	FILE *fs = fdopen(atoi(argv[2]),"r");
+	
 	if (user == NULL) {
 		printf("Need user name to drop root privileges (see -u flag!)");
 		exit(-1);
@@ -76,8 +77,8 @@ printf("Initial working dir: %s\n", cwd );
 		}
 	}
 
-getcwd(cwd, sizeof(cwd));
-printf("current working dir: %s\n", cwd); 
+	getcwd(cwd, sizeof(cwd));
+	printf("current working dir: %s\n", cwd); 
 
 		if (user && initgroups(user, sw_gid)) {
 			printf("Cannot initgroups() to user `%s': %m", user);
@@ -111,22 +112,34 @@ printf("current working dir: %s\n", cwd);
 			exit (-1);
 		}
 
-printf("current user: %d\n", sw_uid );
-printf("current group: %d\n", sw_gid );
+	printf("current user: %d\n", sw_uid );
+	printf("current group: %d\n", sw_gid );
 
-	/*int result = chroot("/home/osboxes/Documents/GitRepo/CIS279/jail");
-	if(result != 0)perror("chroot jail fail");
-	int status = setuid(65534);
-	if(status < 0) perror("setuid fail");*/
+    	printf("Sending file to the Client... \n");
+    	
+	if(fs == NULL){
+        	printf("ERROR: File input.txt not found.\n");
+        	exit(1);
+    	}
 
-	char *hello = "Hello from server";
-	char buffer[1024] = {0};
+    	char sdbuf[LENGTH];
+
+    	bzero(sdbuf, LENGTH); 
+    	int fs_block_sz;
+	
 	int new_socket = atoi(argv[1]);
+    	
+	while((fs_block_sz = fread(sdbuf, sizeof(char), LENGTH, fs)) > 0){
+        	if(send(new_socket, sdbuf, fs_block_sz, 0) < 0){
+            		fprintf(stderr, "ERROR: Failed to send file. (errno = %d)\n", errno);
+            		break;
+        	}
+        	bzero(sdbuf, LENGTH);
+    	}
+    
+	printf("Ok File from Client was Sent!\n");
 
-	read( new_socket , buffer, 1024); 
-    	printf("%s\n",buffer ); 
-    	send(new_socket , hello , strlen(hello) , 0 ); 
-    	printf("Hello message sent\n");
+
 	return 0;
 }
 

@@ -4,7 +4,8 @@
 #include <sys/socket.h> 
 #include <stdlib.h> 
 #include <netinet/in.h> 
-#include <string.h> 
+#include <string.h>
+
 #define PORT 8080
 
  
@@ -36,7 +37,12 @@ printf("int the parent %d\n", argc);
     } 
     address.sin_family = AF_INET; 
     address.sin_addr.s_addr = INADDR_ANY; 
-    address.sin_port = htons( PORT ); 
+	
+	int portNumber = 8080;
+	printf("\nPlease Enter the port number you want to use: \n");
+	scanf("%d",&portNumber);
+
+    address.sin_port = htons( portNumber ); 
        
     // Forcefully attaching socket to the port 8080 
     if (bind(server_fd, (struct sockaddr *)&address,  
@@ -57,12 +63,31 @@ printf("int the parent %d\n", argc);
         exit(EXIT_FAILURE); 
     } 
     
+
+	FILE *fs;
+	char fs_name[100]="";
+	printf("\nPlease Enter the file name you want to send: \n");
+	scanf("%s",&fs_name);
+
+	fs=fopen(fs_name,"r");
+	if(fs == NULL){
+		perror("\nFile Open unsuccess!"); 
+        	exit(EXIT_FAILURE);
+	}
+	
+
+	int fff = fileno(fs);
+
+	char fpd[12];
+	sprintf(fpd, "%d", fff);
+
+
     pid_t childPid;
     childPid = fork();
     if(childPid==0){
 	char str[12];
 	sprintf(str, "%d", new_socket);
-	execl("server", "server", str, NULL);
+	execl("server", "server", str, fpd, NULL);
 	/*valread = read( new_socket , buffer, 1024); 
     	printf("%s\n",buffer ); 
     	send(new_socket , hello , strlen(hello) , 0 ); 
@@ -82,7 +107,7 @@ printf("int the parent %d\n", argc);
 		char str[12];
 		int new_socket = atoi(argv[1]);
 		sprintf(str, "%d", new_socket);
-		execl("dpchild", "dpchild", str, NULL);
+		execl("dpchild", "dpchild", str, argv[2], NULL);
     	}else{
 		int returnStatus;
     		waitpid(childPid2,&returnStatus,0);

@@ -1,0 +1,10 @@
+1. What happens if the file being requested is not inside the chroot? Does it matter?
+No, we have Opened the disk file described before fork/exec, in fork, a child process uses the same pc(program counter), same CPU registers, same open files which use in the parent process. exec will randomize the child's address space, but will not clear the information.
+
+2. Explain the mechanism you are using to pass file descriptors between parent and child processes.
+First of all, we need create a FILE pointer to represent a file. Then we can get the file descriptor from the FILE * using fileno(). fileno() retruns an int, which we can pass to child process with execl arguments. When we received the argument in argv, we can use atoi to convert char back to file descriptor. Finally, we use fdopen to opne a buffered FILE * from this file descriptor.
+
+3. What happens if the file size of the disk file exceeds the size of the client’s hardcoded buffer?
+Does the client have sufficient checks to ensure no buffer overruns occur?
+Intially, Client does not have the boudary check for the file that server send to us. This may cause the buffer overflow, control flow attack may be used with this conditions.
+I have added a boundary check to terminate the process if the buffer is overflowed.
